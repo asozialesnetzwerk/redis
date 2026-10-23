@@ -16,9 +16,11 @@ jobs:
       matrix:
         variant:
           - distro: Debian
+            variant: debian
             containerfile: Containerfile
             tag-suffix: ''
           - distro: Alpine
+            variant: alpine
             containerfile: alpine.Containerfile
             tag-suffix: -alpine
         os:
@@ -67,9 +69,11 @@ jobs:
       matrix:
         variant:
           - distro: Debian
+            variant: debian
             containerfile: Containerfile
             tag-suffix: ''
           - distro: Alpine
+            variant: alpine
             containerfile: alpine.Containerfile
             tag-suffix: -alpine
     steps:
@@ -134,9 +138,11 @@ jobs:
       matrix:
         variant:
           - distro: Debian
+            variant: debian
             containerfile: Containerfile
             tag-suffix: ''
           - distro: Alpine
+            variant: alpine
             containerfile: alpine.Containerfile
             tag-suffix: -alpine
     steps:
