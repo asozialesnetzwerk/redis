@@ -1,9 +1,3 @@
-#
-# NOTE: THIS DOCKERFILE IS GENERATED VIA "apply-templates.sh"
-#
-# PLEASE DO NOT EDIT IT DIRECTLY.
-#
-
 FROM debian:bookworm-slim
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
@@ -57,30 +51,23 @@ RUN set -eux; \
 	gosu nobody true
 
 ENV REDIS_VERSION 6.2.21
-ENV REDIS_DOWNLOAD_URL http://download.redis.io/releases/redis-6.2.21.tar.gz
-ENV REDIS_DOWNLOAD_SHA 6383b32ba8d246f41bbbb83663381f5a5f4c4713235433cec22fc4a47e9b6d5f
 
-RUN set -eux; \
+COPY . /usr/src/redis
+RUN ls -l /usr/src/redis; set -eux; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		ca-certificates \
-		wget \
 		\
 		dpkg-dev \
 		gcc \
 		libc6-dev \
 		libssl-dev \
 		make \
+		pkg-config \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
-	\
-	wget -O redis.tar.gz "$REDIS_DOWNLOAD_URL"; \
-	echo "$REDIS_DOWNLOAD_SHA *redis.tar.gz" | sha256sum -c -; \
-	mkdir -p /usr/src/redis; \
-	tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1; \
-	rm redis.tar.gz; \
 	\
 # disable Redis protected mode [1] as it is unnecessary in context of Docker
 # (ports are not automatically exposed when running inside Docker, but rather explicitly by specifying -p / -P)
