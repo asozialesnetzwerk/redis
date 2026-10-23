@@ -47,7 +47,17 @@ jobs:
           fetch-depth: 0
       - name: Build image
         run: |
-          sudo buildah build --runtime /opt/youki -f "${{ matrix.variant.containerfile }}" -t redis
+          sudo buildah build \
+              --runtime /opt/youki \
+              -f "${{ matrix.variant.containerfile }}" \
+              -t redis \
+              --created-annotation \
+              --timestamp="$(git show --no-patch --format=%ct HEAD)" \
+              --annotation org.opencontainers.image.revision="$(git rev-parse HEAD)" \
+              --annotation org.opencontainers.image.source="https://github.com/{{ github.repository }}" \
+              --annotation org.opencontainers.image.vendor="Das Asoziale Netzwerk" \
+              --annotation org.opencontainers.image.base.name="redis" \
+            ;
           sudo buildah inspect redis
       - name: Save image
         run: sudo buildah push --all --format=oci --compression-format=zstd:chunked --compression-level=20 redis "oci-archive:oci-archive-${{ matrix.os.arch }}.tar"
