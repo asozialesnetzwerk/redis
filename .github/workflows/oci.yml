@@ -156,5 +156,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
           registry: ghcr.io/${{ github.repository }}
+      - name: Push image to ghcr.io as nightly
+        run: skopeo copy --all --preserve-digests oci-archive:oci-archive.tar docker://ghcr.io/${{ github.repository }}:nightly${{ matrix.variant.tag-suffix }}
       - name: Push image to ghcr.io as latest
         run: skopeo copy --all --preserve-digests oci-archive:oci-archive.tar docker://ghcr.io/${{ github.repository }}:latest${{ matrix.variant.tag-suffix }}
+        if: github.event_name == 'push'
