@@ -19,9 +19,9 @@ jobs:
     - name: module api test
       run: ./runtest-moduleapi --verbose
 
-  build-debian-old:
+  build-debian:
     runs-on: ubuntu-latest
-    container: debian:oldoldstable
+    container: debian:stable
     steps:
     - uses: actions/checkout@v2
     - name: make
