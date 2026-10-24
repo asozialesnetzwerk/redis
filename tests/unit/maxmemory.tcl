@@ -186,16 +186,29 @@ proc test_slave_buffers {test_name cmd_count payload_len limit_memory pipeline} 
 
             # put the slave to sleep
             set rd_slave [redis_deferring_client]
-            exec kill -SIGSTOP $slave_pid
+            pause_process $slave_pid
 
             # send some 10mb worth of commands that don't increase the memory usage
             if {$pipeline == 1} {
                 set rd_master [redis_deferring_client -1]
+                # Send commands in batches and read responses to avoid TCP deadlock.
+                # Without interleaving reads, the client's send buffer fills up when
+                # the server's output buffers are full (because we're not reading),
+                # causing flush to block indefinitely on slow machines.
+                set batch_size 10000
                 for {set k 0} {$k < $cmd_count} {incr k} {
                     $rd_master setrange key:0 0 [string repeat A $payload_len]
+                    if {($k + 1) % $batch_size == 0} {
+                        # Drain responses to prevent TCP buffer deadlock
+                        for {set j 0} {$j < $batch_size} {incr j} {
+                            $rd_master read
+                        }
+                    }
                 }
-                for {set k 0} {$k < $cmd_count} {incr k} {
-                    #$rd_master read
+                # Read any remaining responses
+                set remaining [expr {$cmd_count % $batch_size}]
+                for {set k 0} {$k < $remaining} {incr k} {
+                    $rd_master read
                 }
             } else {
                 for {set k 0} {$k < $cmd_count} {incr k} {
@@ -226,7 +239,7 @@ proc test_slave_buffers {test_name cmd_count payload_len limit_memory pipeline} 
 
         }
         # unfreeze slave process (after the 'test' succeeded or failed, but before we attempt to terminate the server
-        exec kill -SIGCONT $slave_pid
+        resume_process $slave_pid
         }
     }
 }

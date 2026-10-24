@@ -1906,11 +1906,12 @@ robj *rdbLoadObject(int rdbtype, rio *rdb, sds key, int *error) {
 
                         /* search for duplicate records */
                         sds field = sdstrynewlen(fstr, flen);
-                        if (!field || dictAdd(dupSearchDict, field, NULL) != DICT_OK ||
-                            !ziplistSafeToAdd(zl, (size_t)flen + vlen)) {
+                        if (!field || !ziplistSafeToAdd(zl, (size_t)flen + vlen) || 
+                            dictAdd(dupSearchDict, field, NULL) != DICT_OK) {
                             rdbReportCorruptRDB("Hash zipmap with dup elements, or big length (%u)", flen);
                             dictRelease(dupSearchDict);
                             sdsfree(field);
+                            zfree(zl);
                             zfree(encoded);
                             o->ptr = NULL;
                             decrRefCount(o);
@@ -2225,6 +2226,14 @@ robj *rdbLoadObject(int rdbtype, rio *rdb, sds key, int *error) {
                         return NULL;
                     }
 
+                    /* If the NACK already has a consumer assigned, the
+                     * payload is corrupt — each global PEL entry must be
+                     * claimed by exactly one consumer. */
+                    if (nack->consumer != NULL) {
+                        rdbReportCorruptRDB("Stream consumer PEL entry already has a consumer assigned");
+                        decrRefCount(o);
+                        return NULL;
+                    }
                     /* Set the NACK consumer, that was left to NULL when
                      * loading the global PEL. Then set the same shared
                      * NACK structure also in the consumer-specific PEL. */
@@ -2234,7 +2243,6 @@ robj *rdbLoadObject(int rdbtype, rio *rdb, sds key, int *error) {
                                                 " loading a stream consumer "
                                                 "group");
                         decrRefCount(o);
-                        streamFreeNACK(nack);
                         return NULL;
                     }
                 }
