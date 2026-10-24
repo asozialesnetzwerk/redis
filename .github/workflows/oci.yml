@@ -54,7 +54,7 @@ jobs:
               --created-annotation \
               --timestamp="$(git show --no-patch --format=%ct HEAD)" \
               --annotation org.opencontainers.image.revision="$(git rev-parse HEAD)" \
-              --annotation org.opencontainers.image.source="https://github.com/{{ github.repository }}" \
+              --annotation org.opencontainers.image.source="https://github.com/${{ github.repository }}" \
               --annotation org.opencontainers.image.vendor="Das Asoziale Netzwerk" \
               --annotation org.opencontainers.image.base.name="redis" \
             ;
